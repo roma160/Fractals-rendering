@@ -1,5 +1,6 @@
-from numpy import matrix, sqrt
+from numpy import *
 
-class Test:
-    def func(self, fix_arg, a):
-        return fix_arg + a
+def sq(num):
+    return sqrt(num.dot(num))
+
+print(sq(array([-5, 0, 0])))
