@@ -25,22 +25,24 @@ class DistanseEstimator :
         self.funcs += other.funcs
         return self
 
-    def __init__(self, type):
-        if type == "cube" :
-            self.funcs += self.SimpleShapes.cube
-        elif type == "ellipse" :
-            self.funcs += self.SimpleShapes.ellipse
+    def __init__(self, position, **kwargs):
+        if "cube_size" in kwargs :
+            self.funcs += lambda ray_pos : self.SimpleShapes.cube(position, kwargs["cube_size"], ray_pos)
+        elif "ellipse_R" in kwargs :
+            self.funcs += lambda ray_pos : self.SimpleShapes.ellipse(position, kwargs["ellipse_R"], ray_pos)
 
-    #def DE(self, position):
+    def DE(self, position):
+        return min([de(position) for de in self.funcs])
 
-
-    @staticmethod
     class SimpleShapes :
-        def len(self, vector):
+        @staticmethod
+        def len(vector):
             return sqrt(vector @ vector)
 
-        def ellipse(self, position, R, ray_pos):
-            return self.len(ray_pos - position) - R
+        @staticmethod
+        def ellipse(position, R, ray_pos):
+            return len(ray_pos - position) - R
 
-        def cube(self, position, a, ray_pos):
+        @staticmethod
+        def cube(position, a, ray_pos):
             return max(map(abs, ray_pos - position)) - a/2
