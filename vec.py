@@ -4,6 +4,9 @@ class vec3 :
     @staticmethod
     def create(x, y, z):
         return vec3((x, y, z))
+    @staticmethod
+    def create_from_arrays(x, y, z):
+        return np.array(list(map(lambda x, y, z : vec3.create(x, y, z), x, y, z)))
     def __init__(self, vect_arr):
         (self.x, self.y, self.z) = vect_arr
     def __mul__(self, other):
@@ -35,3 +38,9 @@ class vec3 :
         return vec3((extract(cond, self.x),
                     extract(cond, self.y),
                     extract(cond, self.z)))
+    def make_array(self, size):
+        return vec3.create(
+            np.full(size, self.x),
+            np.full(size, self.y),
+            np.full(size, self.z)
+        )
