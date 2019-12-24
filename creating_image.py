@@ -1,11 +1,21 @@
 from PIL import Image
 from numpy import array, sqrt, radians
 import numpy as np
-from decimal import Decimal
+import time
+from vec import *
+import operator
 
 zero = 0.0001
 camera_view_angle = 100
-max_iters = 2
+max_iters = 5
+
+def conv(x):
+    if x != x:
+        return 0
+    elif x < 0:
+        return 0
+    else:
+        return x
 
 class Light:
     position = (0, 0, 0)
@@ -19,9 +29,9 @@ class Light:
 
 
 class MergeTraysing :
-    camera_pos = (0, 0, 0)
-    camera_size = (0, 0)
-    camera_rotation = (0, 0)
+    camera_pos = vec3.create(0, 0, 0)
+    camera_size = vec3.create(0, 0, 0)
+    camera_rotation = vec3.create(0, 0, 0)
 
     def __init__(self, camera_position, camera_size, camera_rotation, DE):
         self.camera_pos = camera_position
@@ -33,30 +43,59 @@ class MergeTraysing :
     def ray(self, position, last_pos, iter) :
         min_dist = self.DE.DE(position)
         vect = position - last_pos
-        last_pos = position.copy()
-        position += vect * min_dist / vect.max()
+        #dont know !!!!!
+        last_pos = position
+        position += vect.norm() * min_dist
+        '''
         if self.DE.DE(position) <= zero :
             return 1 - self.DE.DE(position)/self.DE.DE(last_pos)
-        elif iter > max_iters :
-            return 0
+        '''
+        if iter > max_iters :
+            return list(map(conv, (1 - self.DE.DE(position)/self.DE.DE(last_pos))*255))
         else :
             return self.ray(position, last_pos, iter + 1)
 
-    def start_ray(self, x, y) :
-        min_delta = self.DE.DE(array(self.camera_pos))
-        z_angle = radians(self.camera_rotation[0]) + np.arctan(
-            2*(self.camera_size[0]/2 - x)*
-            np.tan(radians(camera_view_angle/2)) / self.camera_size[0]
+    def start_ray_fish(self, x, y) :
+        min_delta = self.DE.DE(self.camera_pos)
+        z_angle = radians(self.camera_rotation.comp()[0]) + np.arctan(
+            2*(self.camera_size.comp()[0]/2 - x)*
+            np.tan(radians(camera_view_angle/2)) / self.camera_size.comp()[0]
             )
-        pos_x = self.camera_pos[0] + np.cos(z_angle)*min_delta
-        pos_y = self.camera_pos[1] + np.sin(z_angle)*min_delta
+        y_angle = radians(self.camera_rotation.comp()[1]) + np.arctan(
+            2*(self.camera_size.comp()[1]/2 - y)*
+            np.tan(radians(camera_view_angle/2)) / self.camera_size.comp()[1]
+            )
+        '''
+        zy_angle = radians(self.camera_rotation) + vec3(np.arctan(
+            2*(self.camera_size - xy).comp()*
+            np.tan(radians(camera_view_angle/2))/
+            self.camera_size.comp()
+        ))
+        d_yz = vec3(np.arctan(
+            2*(self.camera_size - xy).comp()*
+            np.tan(radians(camera_view_angle/2))/
+            self.camera_size.comp()
+        )) + 0.000001
+        '''
+        d_z = np.arctan(
+            2*(self.camera_size.comp()[0]/2 - x)*
+            np.tan(radians(camera_view_angle/2)) / self.camera_size.comp()[0]
+            ) + 0.0001# - radians(camera_view_angle/2)
+        d_y = np.arctan(
+            2*(self.camera_size.comp()[1]/2 - y)*
+            np.tan(radians(camera_view_angle/2)) / self.camera_size.comp()[1]
+            ) + 0.0001# - radians(camera_view_angle/2)
 
-        y_angle = radians(self.camera_rotation[1]) + np.arctan(
-            2*(self.camera_size[1]/2 - y)*
-            np.tan(radians(camera_view_angle/2)) / self.camera_size[1]
-            )
-        pos_z = self.camera_pos[2] + np.sin(y_angle)*min_delta
-        return self.ray(array([pos_x, pos_y, pos_z]), array(self.camera_pos), 0)
+        actual_del = min_delta / (np.cos(d_z) * np.cos(d_y))
+        
+        pos_x = self.camera_pos.comp()[0] + np.cos(z_angle)*np.cos(y_angle)*actual_del
+        pos_y = self.camera_pos.comp()[1] + np.sin(z_angle)*actual_del
+        pos_z = self.camera_pos.comp()[2] + np.sin(y_angle)*actual_del
+        return self.ray(vec3.create(pos_x, pos_y, pos_z), self.camera_pos, 0)
+
+    def start_ray_ortogonal(self, x, y):
+        min_delta = self.DE.DE(array(self.camera_pos))
+
 
 class DistanseEstimator : 
     funcs = []
@@ -76,23 +115,33 @@ class DistanseEstimator :
 
     class SimpleShapes :
         @staticmethod
-        def md(vector):
-            return sqrt(vector.dot(vector))
-
-        @staticmethod
         def ellipse(position, R, ray_pos):
-            md = DistanseEstimator.SimpleShapes.md
-            return md(ray_pos - position) - R
+            return sqrt(abs(ray_pos - position)) - R
 
         @staticmethod
         def cube(position, a, ray_pos):
-            return max(map(abs, ray_pos - position)) - a/2
+            #return max(map(abs, ray_pos - position)) - a/2
+            '''
+            if ray_pos.x.__class__.__name__ != "ndarray":
+                return max(map(abs, ray_pos.comp() - position.comp())) - a/2
+            else :
+                return map(lambda x : max(map(abs, x.comp())) - a/2, ray_pos - position)
+            '''
+            buff = abs((ray_pos - position).comp())
+            return array(list(
+                map(max, 
+                buff)
+            )) - a/2
 
 def getImage(x, y, DE, camera_pos, camera_rotation) : 
-    traysing = MergeTraysing(camera_pos, (x, y), camera_rotation, DE)
-    ret = Image.new("RGB", (x, y))
+    traysing = MergeTraysing(camera_pos, vec3.create(x, y, 0), camera_rotation, DE)
+    ret = Image.new("L", (x, y))
+    '''
     for Y in range(y) :
         for X in range(x) :
-            result = int(pow(traysing.start_ray(X, Y), 2)*255)
+            result = int(pow(traysing.start_ray_fish(X, Y), 1)*255)
             ret.putpixel((X, Y), (result, result, result))
+    '''
+    data = traysing.start_ray_fish(np.tile(np.arange(x), y), np.repeat(np.arange(y), x))
+    ret.putdata(data)
     return ret
