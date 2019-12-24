@@ -17,17 +17,6 @@ def conv(x):
     else:
         return x
 
-class Light:
-    position = (0, 0, 0)
-    strength = 0
-
-    def __init__(self, position, strength):
-        self.position = position
-        self.strength = strength
-
-    #def calculate_ray(self, position):
-
-
 class MergeTraysing :
     camera_pos = vec3.create(0, 0, 0)
     camera_size = vec3.create(0, 0, 0)
@@ -43,13 +32,8 @@ class MergeTraysing :
     def ray(self, position, last_pos, iter) :
         min_dist = self.DE.DE(position)
         vect = position - last_pos
-        #dont know !!!!!
         last_pos = position
         position += vect.norm() * min_dist
-        '''
-        if self.DE.DE(position) <= zero :
-            return 1 - self.DE.DE(position)/self.DE.DE(last_pos)
-        '''
         if iter > max_iters :
             return list(map(conv, (1 - self.DE.DE(position)/self.DE.DE(last_pos))*255))
         else :
@@ -65,18 +49,6 @@ class MergeTraysing :
             2*(self.camera_size.comp()[1]/2 - y)*
             np.tan(radians(camera_view_angle/2)) / self.camera_size.comp()[1]
             )
-        '''
-        zy_angle = radians(self.camera_rotation) + vec3(np.arctan(
-            2*(self.camera_size - xy).comp()*
-            np.tan(radians(camera_view_angle/2))/
-            self.camera_size.comp()
-        ))
-        d_yz = vec3(np.arctan(
-            2*(self.camera_size - xy).comp()*
-            np.tan(radians(camera_view_angle/2))/
-            self.camera_size.comp()
-        )) + 0.000001
-        '''
         d_z = np.arctan(
             2*(self.camera_size.comp()[0]/2 - x)*
             np.tan(radians(camera_view_angle/2)) / self.camera_size.comp()[0]
@@ -111,7 +83,11 @@ class DistanseEstimator :
             self.funcs.append(lambda ray_pos : self.SimpleShapes.ellipse(position, kwargs["ellipse_R"], ray_pos))
 
     def DE(self, position):
-        return min(de(position) for de in self.funcs)
+        buff = list(de(position) for de in self.funcs)
+        if buff[0].__class__.__name__ != "ndarray":
+            return min(buff)
+        else :
+            return min(buff, key=tuple)
 
     class SimpleShapes :
         @staticmethod
@@ -121,27 +97,15 @@ class DistanseEstimator :
         @staticmethod
         def cube(position, a, ray_pos):
             #return max(map(abs, ray_pos - position)) - a/2
-            '''
             if ray_pos.x.__class__.__name__ != "ndarray":
                 return max(map(abs, ray_pos.comp() - position.comp())) - a/2
             else :
-                return map(lambda x : max(map(abs, x.comp())) - a/2, ray_pos - position)
-            '''
-            buff = abs((ray_pos - position).comp())
-            return array(list(
-                map(max, 
-                buff)
-            )) - a/2
+                #return map(lambda x : max(map(abs, x.comp())) - a/2, ray_pos - position)
+                return max(list(abs((ray_pos - position).comp()) - a/2), key=tuple)
 
 def getImage(x, y, DE, camera_pos, camera_rotation) : 
     traysing = MergeTraysing(camera_pos, vec3.create(x, y, 0), camera_rotation, DE)
     ret = Image.new("L", (x, y))
-    '''
-    for Y in range(y) :
-        for X in range(x) :
-            result = int(pow(traysing.start_ray_fish(X, Y), 1)*255)
-            ret.putpixel((X, Y), (result, result, result))
-    '''
     data = traysing.start_ray_fish(np.tile(np.arange(x), y), np.repeat(np.arange(y), x))
     ret.putdata(data)
     return ret

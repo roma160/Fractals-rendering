@@ -29,6 +29,8 @@ class vec3 :
         return self * (1.0 / np.where(mag == 0, 1, mag))
     def comp(self):
         return np.array((self.x, self.y, self.z))
+    def abs(self):
+        return vec3(abs(np.array((self.x, self.y, self.z))))
     def extract(self, cond):
         return vec3((extract(cond, self.x),
                     extract(cond, self.y),
