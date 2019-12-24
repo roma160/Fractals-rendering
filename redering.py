@@ -3,6 +3,7 @@ from PIL import Image, ImageTk
 from creating_image import *
 
 camera_pos = vec3.create(0, 0, 0)
+moving_speed = 0.2
 
 root = Tk()
 root.title("")
@@ -12,7 +13,10 @@ label = Label(root)
 label.pack()
 
 
-DE = DistanseEstimator(vec3.create(5, 0, 0), ellipse_R=1)
+DE = DistanseEstimator(vec3.create(5, 0, 0), ellipse_R=0.5)
+DE = DistanseEstimator(vec3.create(5, 1, 0), cube_size=0.5)
+DE = DistanseEstimator(vec3.create(5, 2, 0), ellipse_R=0.5)
+DE = DistanseEstimator(vec3.create(5, 3, 0), cube_size=0.5)
 
 def upd_img(img) :
     test_img = ImageTk.PhotoImage(image=img)
@@ -27,17 +31,17 @@ def get_img():
 def key(event):
     global camera_pos
     if repr(event.char) == "\'w\'":
-        camera_pos += vec3.create(0, 0, 0.5)
+        camera_pos += vec3.create(0, 0, moving_speed)
     elif repr(event.char) == "\'s\'":
-        camera_pos -= vec3.create(0, 0, 0.5)
+        camera_pos -= vec3.create(0, 0, moving_speed)
     elif repr(event.char) == "\'a\'":
-        camera_pos += vec3.create(0, 0.5, 0)
+        camera_pos += vec3.create(0, moving_speed, 0)
     elif repr(event.char) == "\'d\'":
-        camera_pos -= vec3.create(0, 0.5, 0)
+        camera_pos -= vec3.create(0, moving_speed, 0)
     elif repr(event.char) == "\'q\'":
-        camera_pos += vec3.create(0.5, 0, 0)
+        camera_pos += vec3.create(moving_speed, 0, 0)
     elif repr(event.char) == "\'e\'":
-        camera_pos -= vec3.create(0.5, 0, 0)
+        camera_pos -= vec3.create(moving_speed, 0, 0)
     t = time.time()
     upd_img(get_img())
     print(time.time() - t)

@@ -3,7 +3,10 @@ from tkinter import *
 from PIL import Image, ImageTk
 from numpy import *
 
-(x, y) = (255, 255)
-buff = np.empty(x*y)
-buff.fill(9)
-print(buff)
+a = array([
+    [1, 2, 3, 4],
+    [4, 2, 2, 1]
+])
+
+a = rot90(a)
+print(max(a, key=float))

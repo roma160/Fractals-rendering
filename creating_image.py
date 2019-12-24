@@ -71,10 +71,6 @@ class MergeTraysing :
 
 class DistanseEstimator : 
     funcs = []
-    
-    def __add__(self, other):
-        self.funcs += other.funcs
-        return self
 
     def __init__(self, position, **kwargs):
         if "cube_size" in kwargs :
@@ -87,7 +83,7 @@ class DistanseEstimator :
         if buff[0].__class__.__name__ != "ndarray":
             return min(buff)
         else :
-            return min(buff, key=tuple)
+            return np.minimum.reduce(buff)
 
     class SimpleShapes :
         @staticmethod
@@ -101,7 +97,7 @@ class DistanseEstimator :
                 return max(map(abs, ray_pos.comp() - position.comp())) - a/2
             else :
                 #return map(lambda x : max(map(abs, x.comp())) - a/2, ray_pos - position)
-                return max(list(abs((ray_pos - position).comp()) - a/2), key=tuple)
+                return np.maximum.reduce(abs((ray_pos - position).comp()) - a/2)
 
 def getImage(x, y, DE, camera_pos, camera_rotation) : 
     traysing = MergeTraysing(camera_pos, vec3.create(x, y, 0), camera_rotation, DE)
